@@ -14,7 +14,7 @@ class APKCombo:
 		self.ori_versions = list(set(versions))
 		self.versions = list(set(versions))
 		self.appName = ""
-		self.DownloadFolder = os.path.abspath(os.path.join(DownloadFolder, "APKCombo"))
+		self.DownloadFolder = os.path.abspath(os.path.join(DownloadFolder, "assets", "APKCombo"))
 		self.apkcombo_host = "https://apkcombo.com"
 		self.apkcombo_headers = {
 			"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:108.0) Gecko/20100101 Firefox/108.0"
@@ -22,7 +22,7 @@ class APKCombo:
 		self.client = httpx.Client(http2=True, headers=self.apkcombo_headers, verify=False, timeout=30)
 		self.results = {}
 
-		if not os.path.isdir(self.DownloadFolder): os.mkdir(self.DownloadFolder)
+		if not os.path.isdir(self.DownloadFolder): os.makedirs(self.DownloadFolder)
 
 	def download(self):
 		res = self.client.get(self.apkcombo_host+"/search/"+self.packageId)
@@ -37,7 +37,7 @@ class APKCombo:
 			self.results[self.packageId] = {
 				"status": "success",
 				"data": {
-					"success": {},
+					"success": [],
 					"error": []
 				}
 			}
@@ -86,10 +86,18 @@ class APKCombo:
 							progress_bar.close()
 
 							print("\033[32m[+] \""+appName+".apk\" saved at "+os.path.join(self.DownloadFolder, self.packageId) + "\033[0m")
-							self.results[self.packageId]["data"]["success"][appName] = os.path.join(self.DownloadFolder, self.packageId, appName+".apk")
+							self.results[self.packageId]["data"]["success"].append({
+								"name": self.appName,
+								"version": appVer,
+								"path": os.path.join(self.DownloadFolder, self.packageId, appName+".apk")
+							})
 						except httpx.ReadTimeout:
 							if not os.path.isfile(os.path.join(self.DownloadFolder, self.packageId, appName+".apk")): os.unlink(os.path.join(self.DownloadFolder, self.packageId, appName+".apk"))
-							self.results[self.packageId]["data"]["error"].append(appName)
+							self.results[self.packageId]["data"]["error"].append({
+								"name": self.appName,
+								"version": appVer,
+								"message": "Read Timeout"
+							})
 					break
 				else:
 					soup = BeautifulSoup(res.content, "html.parser")
@@ -126,11 +134,23 @@ class APKCombo:
 								progress_bar.close()
 
 								print("\033[32m[+] \""+appName+".apk\" saved at "+os.path.join(self.DownloadFolder, self.packageId) + "\033[0m")
-								self.results[self.packageId]["data"]["success"][appName] = os.path.join(self.DownloadFolder, self.packageId, appName+".apk")
+								self.results[self.packageId]["data"]["success"].append({
+									"name": self.appName,
+									"version": appVer,
+									"path": os.path.join(self.DownloadFolder, self.packageId, appName+".apk")
+								})
 							except httpx.ReadTimeout:
 								if not os.path.isfile(os.path.join(self.DownloadFolder, self.packageId, appName+".apk")): os.unlink(os.path.join(self.DownloadFolder, self.packageId, appName+".apk"))
-								self.results[self.packageId]["data"]["error"].append(appName)
+								self.results[self.packageId]["data"]["error"].append({
+									"name": self.appName,
+									"version": appVer,
+									"message": "Read Timeout"
+								})
 				page += 1
 
 			for ver in self.versions:
-				self.results[self.packageId]["data"]["error"].append(self.appName + " " + ver + " not found")
+				self.results[self.packageId]["data"]["error"].append({
+					"name": self.appName,
+					"version": ver,
+					"message": "App Version Not Found"
+				})
