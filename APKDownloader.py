@@ -1,3 +1,6 @@
+'''
+	APKDownloader v23.1.17 by Truoc Phan (@truocphan)
+'''
 from bs4 import BeautifulSoup
 import httpx
 import os
